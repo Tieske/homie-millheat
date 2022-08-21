@@ -1,8 +1,8 @@
-local package_name = "[module-name]"
+local package_name = "homie-millheat"
 local package_version = "scm"
 local rockspec_revision = "1"
-local github_account_name = "[github-account-name]"
-local github_repo_name = "[repo-name]"
+local github_account_name = "Tieske"
+local github_repo_name = "homie-millheat"
 
 
 package = package_name
@@ -15,9 +15,9 @@ source = {
 }
 
 description = {
-  summary = "[short-description]",
+  summary = "Application that exposes Millheat devices to the Homie MQTT network",
   detailed = [[
-    [short-description]
+    Application that exposes Millheat devices to the Homie MQTT network
   ]],
   license = "MIT",
   homepage = "https://github.com/"..github_account_name.."/"..github_repo_name,
@@ -31,11 +31,11 @@ build = {
   type = "builtin",
 
   modules = {
-    ["[module-name].init"] = "src/[module-name]/init.lua",
+    ["homie-millheat.init"] = "src/homie-millheat/init.lua",
   },
 
   copy_directories = {
-    -- can be accessed by `luarocks [module-name] doc` from the commandline
+    -- can be accessed by `luarocks homie-millheat doc` from the commandline
     "docs",
   },
 }

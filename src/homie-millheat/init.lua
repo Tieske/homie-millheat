@@ -2,14 +2,14 @@
 --
 -- Explain some basics, or the design.
 --
--- @copyright Copyright (c) [copyright-year]-[copyright-year] [your-name]
--- @author [your-name]
+-- @copyright Copyright (c) 2022-2022 Thijs Schreijer
+-- @author Thijs Schreijer
 -- @license MIT, see `LICENSE`.
 
 local M = {}
 M._VERSION = "0.0.1"
-M._COPYRIGHT = "Copyright (c) [copyright-year]-[copyright-year] [your-name]"
-M._DESCRIPTION = "[short-description]"
+M._COPYRIGHT = "Copyright (c) 2022-2022 Thijs Schreijer"
+M._DESCRIPTION = "Application that exposes Millheat devices to the Homie MQTT network"
 
 
 --- Does something.

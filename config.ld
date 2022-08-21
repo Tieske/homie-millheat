@@ -1,6 +1,6 @@
-project='[repo-name]'
-title='[module-name] docs'
-description='[short-description]'
+project='homie-millheat'
+title='homie-millheat docs'
+description='Application that exposes Millheat devices to the Homie MQTT network'
 
 format='markdown'
 use_markdown_titles = true
