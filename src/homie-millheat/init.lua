@@ -1,10 +1,31 @@
---- This module does something.
+--- Millheat-to-Homie bridge.
 --
--- Explain some basics, or the design.
+-- This module instantiates a homie device acting as a bridge between the Millheat
+-- API and Homie.
 --
+-- The module returns a single function that takes an options table. When called
+-- it will construct a Homie device and add it to the Copas scheduler (without
+-- running the scheduler).
 -- @copyright Copyright (c) 2022-2022 Thijs Schreijer
 -- @author Thijs Schreijer
 -- @license MIT, see `LICENSE`.
+-- @usage
+-- local copas = require "copas"
+-- local hmh = require "homie-millheat"
+--
+-- hmh {
+--   millheat_access_key = "xxxxxxxx",
+--   millheat_secret_token = "xxxxxxxx",
+--   millheat_username = "xxxxxxxx",
+--   millheat_password = "xxxxxxxx",
+--   millheat_poll_interval = 15,            -- default: 15 seconds
+--   homie_mqtt_uri = "http://mqtthost:123", -- format: "mqtt(s)://user:pass@hostname:port"
+--   homie_domain = "homie",                 -- default: "homie"
+--   homie_device_id = "millheat",           -- default: "millheat"
+--   homie_device_name = "M2H bridge",       -- default: "Millheat-to-Homie bridge"
+-- }
+--
+-- copas.loop()
 
 local copas = require "copas"
 local copas_timer = require "copas.timer"

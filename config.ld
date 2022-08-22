@@ -8,7 +8,6 @@ style="./doc_topics/"
 
 file={'./src/','./bin/'}
 topics={'./doc_topics/', './LICENSE', './CHANGELOG.md'}
-examples = {'./examples'}
 
 dir='docs'
 sort=true

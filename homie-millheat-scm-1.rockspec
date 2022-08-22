@@ -27,7 +27,7 @@ description = {
 dependencies = {
   "lua >= 5.1, < 5.5",
   "homie",
-  "logging >= 1.6.0, < 2",
+  "lualogging >= 1.6.0, < 2",
   "ansicolors",
 }
 
@@ -45,7 +45,6 @@ build = {
   },
 
   copy_directories = {
-    -- can be accessed by `luarocks homie-millheat doc` from the commandline
     "docs",
   },
 }

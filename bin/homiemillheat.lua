@@ -1,12 +1,22 @@
 #!/usr/bin/env lua
 
---- Main application.
--- Reads config from environment variables and starts the Millheat-to-Homie bridge.
+--- Main CLI application.
+-- Reads configuration from environment variables and starts the Millheat-to-Homie bridge.
 -- Does not support any CLI parameters.
 -- @module homiemillheat
 -- @usage
 -- # configure parameters as environment variables
--- export MILLHEAT_ACCESS_KEY="sooper-secret"
+-- export MILLHEAT_ACCESS_KEY="xxxxxxxx"
+-- export MILLHEAT_SECRET_TOKEN="xxxxxxxx"
+-- export MILLHEAT_USERNAME="xxxxxxxx"
+-- export MILLHEAT_PASSWORD="xxxxxxxx"
+-- export MILLHEAT_POLL_INTERVAL=5            # default: 15 seconds
+-- export HOMIE_MQTT_URI="mqtt://synology"    # format: "mqtt(s)://user:pass@hostname:port"
+-- export HOMIE_LOG_LEVEL="info"              # default: "INFO"
+-- export HOMIE_DOMAIN="homie"                # default: "homie"
+-- export HOMIE_DEVICE_ID="millheat"          # default: "millheat"
+-- export HOMIE_DEVICE_NAME="M2H bridge"      # default: "Millheat-to-Homie bridge"
+--
 -- # start the application
 -- homiemillheat
 
@@ -14,6 +24,7 @@ local ansicolors = require "ansicolors" -- https://github.com/kikito/ansicolors.
 local ll = require "logging"
 
 local log_level = tostring(os.getenv("HOMIE_LOG_LEVEL") or "INFO"):upper()
+assert(type(ll[log_level]) == "string", "environment variable HOMIE_LOG_LEVEL invalid; '"..log_level.."' is not a valid log-level")
 
 local logger do -- configure the default logger
   require "logging.console"
@@ -72,7 +83,7 @@ local opts = {
   homie_domain = os.getenv("HOMIE_DOMAIN") or "homie",
   homie_mqtt_uri = assert(os.getenv("HOMIE_MQTT_URI"), "environment variable HOMIE_MQTT_URI not set"),
   homie_device_id = os.getenv("HOMIE_DEVICE_ID") or "millheat",
-  homie_device_name = os.getenv("HOMIE_DEVICE_NAME") or "millheat-to-homie bridge",
+  homie_device_name = os.getenv("HOMIE_DEVICE_NAME") or "Millheat-to-Homie bridge",
 }
 
 logger:info("Bridge configuration:")
