@@ -17,7 +17,7 @@ RUN luarocks install copas
 RUN luarocks install lualogging
 RUN luarocks install penlight
 RUN luarocks install Tieske/luamqtt --dev
-RUN luarocks install homie --dev --verbose
+RUN luarocks install homie --dev
 RUN luarocks install luabitop
 
 # copy the local repo contents and build it
