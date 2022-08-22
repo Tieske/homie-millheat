@@ -17,7 +17,8 @@ source = {
 description = {
   summary = "Application that exposes Millheat devices to the Homie MQTT network",
   detailed = [[
-    Application that exposes Millheat devices to the Homie MQTT network
+    Application that exposes Millheat devices to the Homie MQTT network. It runs on
+    top of the Copas scheduler and uses the Millheat HTTP API.
   ]],
   license = "MIT",
   homepage = "https://github.com/"..github_account_name.."/"..github_repo_name,
@@ -25,6 +26,9 @@ description = {
 
 dependencies = {
   "lua >= 5.1, < 5.5",
+  "homie",
+  "logging >= 1.6.0, < 2",
+  "ansicolors",
 }
 
 build = {
@@ -32,6 +36,12 @@ build = {
 
   modules = {
     ["homie-millheat.init"] = "src/homie-millheat/init.lua",
+  },
+
+  install = {
+    bin = {
+      homiemillheat = "bin/homiemillheat.lua",
+    }
   },
 
   copy_directories = {
