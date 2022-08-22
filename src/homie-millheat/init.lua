@@ -76,19 +76,19 @@ local function get_devices(self)
 end
 
 
-local function create_device(self)
+local function create_device(self_bridge)
   local newdevice = {
-    uri = self.homie_mqtt_uri,
-    domain = self.homie_domain,
+    uri = self_bridge.homie_mqtt_uri,
+    domain = self_bridge.homie_domain,
     broker_state = 3,
-    id = self.homie_device_id,
+    id = self_bridge.homie_device_id,
     homie = "4.0.0",
     extensions = "",
-    name = self.homie_device_name,
+    name = self_bridge.homie_device_name,
     nodes = {}
   }
 
-  for i, heater in ipairs(self.device_list) do
+  for i, heater in ipairs(self_bridge.device_list) do
     local node = {}
     newdevice.nodes[heater.deviceName] = node
 
@@ -125,7 +125,7 @@ local function create_device(self)
 
           local ok, err
           for i = 1, RETRIES+1 do
-            ok, err = self.millheat:control_device(device_id, "temperature", "single", value)
+            ok, err = self_bridge.millheat:control_device(device_id, "temperature", "single", value)
             if ok then
               break;
             end
