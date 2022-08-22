@@ -29,6 +29,7 @@ dependencies = {
   "homie",
   "lualogging >= 1.6.0, < 2",
   "ansicolors",
+  "millheat",
 }
 
 build = {
