@@ -3,7 +3,7 @@ describe("description", function()
   local mymod = require "homie-millheat"
 
   it("replace this file with your own tests", function()
-    mymod.do_something("tell a lie!", true)
+    assert.is_function(mymod)
   end)
 
 end)
