@@ -28,7 +28,6 @@ dependencies = {
   "lua >= 5.1, < 5.5",
   "homie",
   "lualogging >= 1.6.0, < 2",
-  "ansicolors",
   "millheat",
 }
 

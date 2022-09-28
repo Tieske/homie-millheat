@@ -1,20 +1,11 @@
-FROM alpine:latest as build
+FROM akorn/luarocks:lua5.1-alpine as build
 
-RUN apk update \
-    && apk add wget lua5.1-dev git unzip make g++ curl openssl openssl-dev \
-    && cd /tmp \
-    && git clone https://github.com/keplerproject/luarocks.git --branch v3.9.1 --single-branch --depth=1 \
-    && cd luarocks \
-    && sh ./configure \
-    && make build install \
-    && cd / \
-    && rm -rf /tmp/luarocks
+RUN apk add make gcc libc-dev git openssl-dev
 
 
 # install dependencies separately to not have --dev versions for them as well
 RUN luarocks install luasec
 RUN luarocks install copas
-RUN luarocks install lualogging
 RUN luarocks install penlight
 RUN luarocks install Tieske/luamqtt --dev
 RUN luarocks install homie --dev
@@ -23,10 +14,12 @@ RUN luarocks install luabitop
 # copy the local repo contents and build it
 COPY ./ /tmp/homie-millheat
 RUN cd /tmp/homie-millheat && luarocks make
+# while unreleased, replace lualogging with dev version
+RUN luarocks remove lualogging --force; luarocks install lualogging --dev
 
 
-FROM  alpine:latest
-RUN apk add --no-cache lua5.1 openssl
+FROM akorn/lua:5.1-alpine
+RUN apk add --no-cache openssl ca-certificates
 
 # copy luarocks tree and data over
 COPY --from=build /usr/local/lib/lua /usr/local/lib/lua
