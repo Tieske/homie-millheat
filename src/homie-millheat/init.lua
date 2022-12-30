@@ -31,6 +31,7 @@ local copas = require "copas"
 local copas_timer = require "copas.timer"
 local Device = require "homie.device"
 local log = require("logging").defaultLogger()
+local json = require "cjson.safe"
 
 local RETRIES = 3 -- retries for setting a new setpoint
 local RETRY_DELAY = 1 -- in seconds, doubled after each try (as back-off mechanism)
@@ -39,14 +40,14 @@ local RETRY_DELAY = 1 -- in seconds, doubled after each try (as back-off mechani
 local function get_devices(self)
   local devices = {}
   local homes, err = self.millheat:get_homes()
-  if not homes then return homes, err end
+  if not homes then return homes, err or "millheat:get_homes() failed" end
   -- print("homes: ", require("pl.pretty").write(homes))
 
   for i, home in ipairs(homes) do
     home.homeId = string.format("%d", home.homeId) -- tostring  proper format
 
     local heaters, err = self.millheat:get_independent_devices_by_home(home.homeId)
-    if not heaters then return heaters, err end
+    if not heaters then return heaters, err or "millheat:get_independent_devices_by_home() failed" end
 
     for j, heater in ipairs(heaters) do
       heater.deviceId = string.format("%d", heater.deviceId) -- tostring  proper format
@@ -64,7 +65,7 @@ local function get_devices(self)
 
       -- independentTemp setpoint is only available on individual devices, so need another request
       heater, err = self.millheat:get_device(heater.deviceId)
-      if not heater then return heater, err end
+      if not heater then return heater, err or "millheat:get_device() failed" end
       --print("device: ", require("pl.pretty").write(heater))
       devices[#devices].setpoint = heater.independentTemp
     end
@@ -80,7 +81,7 @@ local function create_device(self_bridge)
   local newdevice = {
     uri = self_bridge.homie_mqtt_uri,
     domain = self_bridge.homie_domain,
-    broker_state = 3,
+    broker_state = 3,  -- recover state from broker, in 3 seconds
     id = self_bridge.homie_device_id,
     homie = "4.0.0",
     extensions = "",
@@ -100,7 +101,7 @@ local function create_device(self_bridge)
         datatype = "integer",
         settable = false,
         retained = true,
-        default = heater.temperature,
+        default = type(heater.temperature) == "number" and heater.temperature or 10, -- 10 C as safe-haven
         unit = "C",
       },
       setpoint = {
@@ -112,12 +113,10 @@ local function create_device(self_bridge)
         unit = "C",
         format = "0:35", -- follows the Millheat app, API accepts more
         set = function(self, value, remote)
-          if self.device.state == Device.states.init or
-             not remote then
+          if self.device.state == Device.states.init or not remote then
             -- local change, probably retrieved from Millheat API, so just change locally,
             -- or in INIT phase we do not yet update
-            self:update(value)
-            return
+            return self:update(value)
           end
 
           log:debug("[homie-millheat] setting new mqtt-setpoint received for '%s': %d", self.node.name, value)
@@ -131,13 +130,13 @@ local function create_device(self_bridge)
             end
             log:warn("[homie-millheat] failed setting new mqtt-setpoint for '%s' (attempt %d): %s", self.node.name, i, err)
             if i ~= RETRIES+1 then
-              copas.sleep(i * RETRY_DELAY)
+              copas.pause(i * RETRY_DELAY)
             end
           end
 
           if ok then
             log:debug("[homie-millheat] successfully set new mqtt-setpoint for '%s': %d", self.node.name, value)
-            self:update(value)
+            return self:update(value)
           else
             log:error("[homie-millheat] failed setting new mqtt-setpoint for '%s': %d (%d attempts)", self.node.name, value, RETRIES+1)
           end
@@ -178,7 +177,7 @@ local function timer_callback(timer, self)
 
   local devices, err = get_devices(self)
   if not devices then
-    log:error("[homie-millheat] failed to update devices: %s", err)
+    log:error("[homie-millheat] failed to update devices: %s", tostring(err))
     return
   end
 
@@ -217,21 +216,28 @@ local function timer_callback(timer, self)
   -- update retrieved values
   for i, heater in ipairs(self.device_list) do
     local node = self.homie_device.nodes[heater.deviceName]
-    if node.properties.temperature:get() ~= heater.temperature then
-      log:debug("[homie-millheat] new temperature received for '%s': %d", heater.deviceName, heater.temperature)
-      node.properties.temperature:set(heater.temperature)
+    if heater.temperature == "--.-" then
+      log:warn("[homie-millheat] No temperature value received for '%s', Received data: %s", tostring(heater.deviceName), json.encode(heater))
+    else
+      local ok, err = node.properties.temperature:set(heater.temperature)
+      if not ok then
+        log:error("[homie-millheat] Setting new temperature failed: '%s' Received data: %s", tostring(err), json.encode(heater))
+      end
     end
-    if node.properties.setpoint:get() ~= heater.setpoint then
-      log:debug("[homie-millheat] new setpoint received for '%s': %d", heater.deviceName, heater.setpoint)
-      node.properties.setpoint:set(heater.setpoint)
+
+    local ok, err = node.properties.setpoint:set(heater.setpoint)
+    if not ok then
+      log:error("[homie-millheat] Setting new setpoint failed: '%s' Received data: %s", tostring(err), json.encode(heater))
     end
-    if node.properties.heating:get() ~= heater.heating then
-      log:debug("[homie-millheat] new heating status received for '%s': %s", heater.deviceName, heater.heating)
-      node.properties.heating:set(heater.heating)
+
+    local ok, err = node.properties.heating:set(heater.heating)
+    if not ok then
+      log:error("[homie-millheat] Setting new heating-status failed: '%s' Received data: %s", tostring(err), json.encode(heater))
     end
-    if node.properties["window-open"]:get() ~= heater.openWindow then
-      log:debug("[homie-millheat] new window-open status received for '%s': %s", heater.deviceName, heater.openWindow)
-      node.properties["window-open"]:set(heater.openWindow)
+
+    local ok, err = node.properties["window-open"]:set(heater.openWindow)
+    if not ok then
+      log:error("[homie-millheat] Setting new window-open status failed: '%s' Received data: %s", tostring(err), json.encode(heater))
     end
   end
 end

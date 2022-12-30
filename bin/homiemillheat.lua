@@ -4,9 +4,9 @@
 -- Reads configuration from environment variables and starts the Millheat-to-Homie bridge.
 -- Does not support any CLI parameters.
 --
--- For configureing the log, use LuaLogging enviornment variable prefix `"HOMIE_LOG_"`, see
+-- For configuring the log, use LuaLogging environment variable prefix `"HOMIE_LOG_"`, see
 -- "logLevel" in the example below.
--- @module homiemillheat
+-- @script homiemillheat
 -- @usage
 -- # configure parameters as environment variables
 -- export MILLHEAT_ACCESS_KEY="xxxxxxxx"
@@ -22,6 +22,14 @@
 --
 -- # start the application
 -- homiemillheat
+
+
+-- do -- Add corowatch for debugging purposes
+--   local corowatch = require "corowatch"
+--   if jit then jit.off() end -- no hooks will be called for jitted code, so disable jit
+--   corowatch.export(_G)
+--   corowatch.watch(nil, 30, nil, nil, 1) -- watch the main-coroutine, kill coroutine after 30 seconds, hookcount = 1 to be as precise as possible
+-- end
 
 local ll = require "logging"
 local copas = require "copas"
@@ -41,6 +49,7 @@ do -- set Copas errorhandler
 end
 
 
+print("starting Millheat-to-Homie bridge")
 logger:info("starting Millheat-to-Homie bridge")
 
 
