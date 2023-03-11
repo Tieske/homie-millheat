@@ -102,7 +102,7 @@ local function create_device(self_bridge)
         settable = false,
         retained = true,
         default = type(heater.temperature) == "number" and heater.temperature or 10, -- 10 C as safe-haven
-        unit = "C",
+        unit = "°C",
       },
       setpoint = {
         name = "setpoint",
@@ -110,7 +110,7 @@ local function create_device(self_bridge)
         settable = true,
         retained = true,
         default = heater.setpoint,
-        unit = "C",
+        unit = "°C",
         format = "0:35", -- follows the Millheat app, API accepts more
         set = function(self, value, remote)
           if self.device.state == Device.states.init or not remote then
