@@ -62,6 +62,10 @@ local opts = {
   homie_device_id = os.getenv("HOMIE_DEVICE_ID") or "millheat",
   homie_device_name = os.getenv("HOMIE_DEVICE_NAME") or "Millheat-to-Homie bridge",
 }
+if opts.millheat_api_key == "" then opts.millheat_api_key = nil end
+if opts.millheat_username == "" then opts.millheat_username = nil end
+if opts.millheat_password == "" then opts.millheat_password = nil end
+
 if opts.millheat_api_key then
   opts.millheat_username = nil
   opts.millheat_password = nil

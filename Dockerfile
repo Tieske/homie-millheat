@@ -34,9 +34,9 @@ RUN apk add --no-cache \
     ca-certificates \
     openssl
 
-ENV MILLHEAT_API_KEY "api-key..."
-ENV MILLHEAT_USERNAME "username..."
-ENV MILLHEAT_PASSWORD "password..."
+# ENV MILLHEAT_API_KEY "api-key..."
+# ENV MILLHEAT_USERNAME "username..."
+# ENV MILLHEAT_PASSWORD "password..."
 ENV MILLHEAT_POLL_INTERVAL "60"
 ENV HOMIE_DOMAIN "homie"
 ENV HOMIE_MQTT_URI "mqtt://mqtthost:1883"
