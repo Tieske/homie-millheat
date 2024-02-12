@@ -14,8 +14,7 @@
 -- local hmh = require "homie-millheat"
 --
 -- hmh {
---   millheat_access_key = "xxxxxxxx",
---   millheat_secret_token = "xxxxxxxx",
+--   millheat_api_key = "xxxxxxxx",          -- choose: api_key or username+password !!
 --   millheat_username = "xxxxxxxx",
 --   millheat_password = "xxxxxxxx",
 --   millheat_poll_interval = 15,            -- default: 15 seconds
@@ -39,35 +38,46 @@ local RETRY_DELAY = 1 -- in seconds, doubled after each try (as back-off mechani
 
 local function get_devices(self)
   local devices = {}
-  local homes, err = self.millheat:get_homes()
-  if not homes then return homes, err or "millheat:get_homes() failed" end
+  local status, homes = self.millheat:srequest("GET:/houses")
+  if not status then
+    if type(homes) == "table" then
+      homes = json.encode(homes)
+    end
+    return status, "GET:/house failed: "..homes
+  end
+  homes = homes.ownHouses or {}  -- select only our own houses from the response
+
   -- print("homes: ", require("pl.pretty").write(homes))
 
   for i, home in ipairs(homes) do
-    home.homeId = string.format("%d", home.homeId) -- tostring  proper format
+    local status, heaters = self.millheat:srequest("GET:/houses/{houseId}/devices/independent", {
+      houseId = home.id
+    })
+    if not status then
+      if type(heaters) == "table" then
+        heaters = json.encode(heaters)
+      end
+      return status, "GET:/houses/{houseId}/devices/independent failed: "..heaters
+    end
+    heaters = heaters.items or {}  -- select the devices in the 'items' array of the response
 
-    local heaters, err = self.millheat:get_independent_devices_by_home(home.homeId)
-    if not heaters then return heaters, err or "millheat:get_independent_devices_by_home() failed" end
+    -- print("heaters: ", require("pl.pretty").write(heaters))
 
     for j, heater in ipairs(heaters) do
-      heater.deviceId = string.format("%d", heater.deviceId) -- tostring  proper format
       -- print("device: ", require("pl.pretty").write(heater))
 
       devices[#devices + 1] = {
-        homeName = home.homeName,
-        homeId = string.format("%d", home.homeId),
-        deviceName = (home.homeName .. "-" .. heater.deviceName):lower(),
-        deviceId = string.format("%d", heater.deviceId),
-        temperature = heater.ambientTemperature,
-        heating = heater.heatingStatus ~= 0, -- convert to boolean
-        openWindow = heater.openWindow ~= 0, -- convert to boolean
+        homeName = home.name,
+        homeId = home.id,
+        deviceName = (home.name .. "-" .. heater.customName):lower(),
+        deviceId = heater.deviceId,
+        temperature = (heater.lastMetrics or {}).temperatureAmbient,
+        heating = (heater.lastMetrics or {}).heaterFlag ~= 0, -- convert to boolean
+        openWindow = (heater.lastMetrics or {}).openWindowsStatus ~= 0, -- convert to boolean
+        setpoint = ((heater.deviceSettings or {}).desired or {}).temperature_normal,
       }
 
-      -- independentTemp setpoint is only available on individual devices, so need another request
-      heater, err = self.millheat:get_device(heater.deviceId)
-      if not heater then return heater, err or "millheat:get_device() failed" end
-      --print("device: ", require("pl.pretty").write(heater))
-      devices[#devices].setpoint = heater.independentTemp
+      -- print("device: ", require("pl.pretty").write(devices[#devices]))
     end
 
   end
@@ -119,16 +129,31 @@ local function create_device(self_bridge)
             return self:update(value)
           end
 
-          log:debug("[homie-millheat] setting new mqtt-setpoint received for '%s': %d", self.node.name, value)
+          log:info("[homie-millheat] setting new mqtt-setpoint received for '%s': %d", self.node.name, value)
           local device_id = self.node.properties["millheat-device-id"]:get()
 
-          local ok, err
+          local ok, status, err
           for i = 1, RETRIES+1 do
-            ok, err = self_bridge.millheat:control_device(device_id, "temperature", "single", value)
+            ok, err, status = self_bridge.millheat:srequest("PATCH:/devices/{deviceId}/settings", {
+              deviceId = device_id
+            }, {
+              deviceType = "Heaters",
+              enabled = true,
+              settings = {
+                operation_mode = "independent_device",
+                temperature_normal = value,
+              }
+            })
+
             if ok then
               break;
             end
-            log:warn("[homie-millheat] failed setting new mqtt-setpoint for '%s' (attempt %d): %s", self.node.name, i, err)
+
+            if type(err) == "table" then
+              err = json.encode(err)
+            end
+
+            log:warn("[homie-millheat] failed setting new mqtt-setpoint for '%s' (attempt %d): %d: %s", self.node.name, i, status, err)
             if i ~= RETRIES+1 then
               copas.pause(i * RETRY_DELAY)
             end
@@ -246,9 +271,11 @@ end
 
 return function(self)
   -- Millheat API session object
-  self.millheat = require("millheat").new(
-    self.millheat_access_key, self.millheat_secret_token,
-    self.millheat_username, self.millheat_password)
+  self.millheat = require("millheat").new {
+    username = self.millheat_username,
+    password = self.millheat_password,
+    api_key = self.millheat_api_key,
+  }
 
   self.device_list = {}  -- last list retrieved
 

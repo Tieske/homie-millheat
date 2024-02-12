@@ -26,9 +26,10 @@ description = {
 
 dependencies = {
   "lua >= 5.1, < 5.5",
+  "luabitop",
   "homie",
   "lualogging >= 1.6.0, < 2",
-  "millheat = 0.3.0",
+  "millheat",
 }
 
 build = {
