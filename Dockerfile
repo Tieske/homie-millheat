@@ -8,12 +8,12 @@ RUN apk add \
     openssl-dev
 
 # install dependencies separately to not have --dev versions for them as well
-RUN luarocks install copas \
- && luarocks install luasec \
- && luarocks install penlight \
- && luarocks install Tieske/luamqtt --dev \
- && luarocks install homie --dev \
- && luarocks install luabitop
+# RUN luarocks install copas \
+#  && luarocks install luasec \
+#  && luarocks install penlight \
+#  && luarocks install Tieske/luamqtt --dev \
+#  && luarocks install homie --dev \
+#  && luarocks install luabitop
 
 # copy the local repo contents and build it
 COPY ./ /tmp/homie-millheat
@@ -34,8 +34,7 @@ RUN apk add --no-cache \
     ca-certificates \
     openssl
 
-ENV MILLHEAT_ACCESS_KEY "accesskey..."
-ENV MILLHEAT_SECRET_TOKEN "token..."
+ENV MILLHEAT_API_KEY "api-key..."
 ENV MILLHEAT_USERNAME "username..."
 ENV MILLHEAT_PASSWORD "password..."
 ENV MILLHEAT_POLL_INTERVAL "60"

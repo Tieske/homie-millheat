@@ -9,8 +9,7 @@
 -- @script homiemillheat
 -- @usage
 -- # configure parameters as environment variables
--- export MILLHEAT_ACCESS_KEY="xxxxxxxx"
--- export MILLHEAT_SECRET_TOKEN="xxxxxxxx"
+-- export MILLHEAT_API_KEY="xxxxxxxx"         # choose: API_KEY or USERNAME+PASSWORD !!
 -- export MILLHEAT_USERNAME="xxxxxxxx"
 -- export MILLHEAT_PASSWORD="xxxxxxxx"
 -- export MILLHEAT_POLL_INTERVAL=5            # default: 15 seconds
@@ -54,22 +53,28 @@ logger:info("starting Millheat-to-Homie bridge")
 
 
 local opts = {
-  millheat_access_key = assert(os.getenv("MILLHEAT_ACCESS_KEY"), "environment variable MILLHEAT_ACCESS_KEY not set"),
-  millheat_secret_token = assert(os.getenv("MILLHEAT_SECRET_TOKEN"), "environment variable MILLHEAT_SECRET_TOKEN not set"),
-  millheat_username = assert(os.getenv("MILLHEAT_USERNAME"), "environment variable MILLHEAT_USERNAME not set"),
-  millheat_password = assert(os.getenv("MILLHEAT_PASSWORD"), "environment variable MILLHEAT_PASSWORD not set"),
+  millheat_api_key = os.getenv("MILLHEAT_ACCESS_KEY"),
+  millheat_username = os.getenv("MILLHEAT_USERNAME"),
+  millheat_password = os.getenv("MILLHEAT_PASSWORD"),
   millheat_poll_interval = tonumber(os.getenv("MILLHEAT_POLL_INTERVAL")) or 15,
   homie_domain = os.getenv("HOMIE_DOMAIN") or "homie",
   homie_mqtt_uri = assert(os.getenv("HOMIE_MQTT_URI"), "environment variable HOMIE_MQTT_URI not set"),
   homie_device_id = os.getenv("HOMIE_DEVICE_ID") or "millheat",
   homie_device_name = os.getenv("HOMIE_DEVICE_NAME") or "Millheat-to-Homie bridge",
 }
+if opts.millheat_api_key then
+  opts.millheat_username = nil
+  opts.millheat_password = nil
+else
+  if opts.millheat_username == nil or opts.millheat_password == nil then
+    error("either MILLHEAT_USERNAME and MILLHEAT_PASSWORD must both be set, or MILLHEAT_API_KEY must be set")
+  end
+end
 
 logger:info("Bridge configuration:")
-logger:info("MILLHEAT_ACCESS_KEY: ********")
-logger:info("MILLHEAT_SECRET_TOKEN: ********")
-logger:info("MILLHEAT_USERNAME: %s", opts.millheat_username)
-logger:info("MILLHEAT_PASSWORD: ********")
+logger:info("MILLHEAT_API_KEY: %s", (opts.millheat_api_key and "********" or "nil"))
+logger:info("MILLHEAT_USERNAME: %s", opts.millheat_username or "nil")
+logger:info("MILLHEAT_PASSWORD: %s", (opts.millheat_password and "********" or "nil"))
 logger:info("MILLHEAT_POLL_INTERVAL: %d seconds", opts.millheat_poll_interval)
 logger:info("HOMIE_DOMAIN: %s", opts.homie_domain)
 logger:info("HOMIE_MQTT_URI: %s", opts.homie_mqtt_uri)
